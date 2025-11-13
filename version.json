@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "release_date": "2025-11-13",
+  "download_url": "https://github.com/MrAayZee/Scanify/releases/latest",
+  "changelog": [
+    "Initial release",
+    "Realistic scan effects",
+    "Auto-update checker",
+    "About dialog"
+  ]
+}
