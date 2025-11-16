@@ -137,12 +137,12 @@ class PDFProcessor:
                 # Apply scan effects
                 processed_image = apply_scan_effects(image, config)
 
-                # Convert back to bytes
+                # Convert back to bytes, using JPEG quality from config
                 img_byte_arr = io.BytesIO()
                 processed_image.save(
                     img_byte_arr,
                     format='JPEG',
-                    quality=config.jpg_quality,
+                    quality=int(config.jpg_quality),
                     optimize=True
                 )
                 img_byte_arr.seek(0)

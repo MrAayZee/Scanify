@@ -57,11 +57,17 @@ def apply_scan_effects(image: Image.Image, config) -> Image.Image:
     # Add realistic paper color first (unless B&W)
     if not config.black_and_white:
         image = apply_paper_color(image)
+        # Apply yellowness effect
+        if hasattr(config, 'yellowness') and config.yellowness > 0.01:
+            image = apply_yellowness(image, config.yellowness)
 
     # Apply color mode conversion if B&W
     if config.black_and_white:
         image = apply_black_and_white(image)
 
+    # Apply tilt effect (random rotation)
+    if hasattr(config, 'tilt_randomness') and config.tilt_randomness > 0.01:
+        image = apply_tilt(image, config.tilt_randomness)
     # Apply warp/distortion
     if config.warp > 0.01:
         image = apply_warp(image, config.warp)
@@ -184,19 +190,35 @@ def apply_lighting(image: Image.Image, intensity: float) -> Image.Image:
     # Normalize distances
     norm_dist = distances / max_dist
 
-    # Apply noticeable lighting gradient - scanners DO have visible light falloff
-    brightness_variation = 1.0 + (intensity * 0.25 * (1.0 - norm_dist)) - (intensity * 0.15)
+    # Lower intensity = less light (darker), higher = more light (brighter)
+    # Invert so 0 is dark, 1 is bright
+    base = 0.5 + intensity * 0.5  # 0.5 to 1.0
+    brightness_variation = base + (intensity * 0.25 * (1.0 - norm_dist)) - (intensity * 0.15)
     lighting = brightness_variation
 
-    # Warm color cast from scanner light
-    r_channel = img_array[:, :, 0] * lighting * 1.02  # Warm red
-    g_channel = img_array[:, :, 1] * lighting * 1.01  # Slight green
-    b_channel = img_array[:, :, 2] * lighting * 0.96  # Reduce blue for warmth
+    r_channel = img_array[:, :, 0] * lighting * 1.02
+    g_channel = img_array[:, :, 1] * lighting * 1.01
+    b_channel = img_array[:, :, 2] * lighting * 0.96
 
     result = np.stack([r_channel, g_channel, b_channel], axis=2)
     result = np.clip(result, 0, 255).astype(np.uint8)
 
     return Image.fromarray(result)
+def apply_yellowness(image: Image.Image, intensity: float) -> Image.Image:
+    """Blend yellow tint based on intensity. Lower = whiter, higher = yellow."""
+    img_array = np.array(image, dtype=np.float32)
+    # Yellow tint: [255, 255, 200]
+    yellow = np.array([255, 255, 200], dtype=np.float32)
+    blend = intensity * 0.7  # Max 70% yellow
+    result = img_array * (1 - blend) + yellow * blend
+    result = np.clip(result, 0, 255).astype(np.uint8)
+    return Image.fromarray(result)
+def apply_tilt(image: Image.Image, intensity: float) -> Image.Image:
+    """Apply random tilt/rotation to simulate page misalignment."""
+    if intensity < 0.01:
+        return image
+    angle = random.uniform(-intensity * 7, intensity * 7)  # -7 to +7 degrees
+    return image.rotate(angle, resample=Image.BICUBIC, expand=True, fillcolor=(255,255,255))
 
 
 def apply_warp(image: Image.Image, intensity: float) -> Image.Image:
@@ -312,56 +334,38 @@ def apply_shadows(image: Image.Image, intensity: float, tilt: float) -> Image.Im
     width, height = image.size
     img_array = np.array(image, dtype=np.float32)
 
-    # Create shadow vignette from edges
+    # Create multiple random shadow bands
     shadow = np.ones((height, width), dtype=np.float32)
-
-    # Noticeable shadow strength
-    shadow_strength = intensity * 0.3
-
-    # Top and bottom edge vignetting
-    edge_size = int(height * 0.15)
-    for y in range(edge_size):
-        fade = (edge_size - y) / edge_size
-        shadow[y, :] *= (1.0 - fade * shadow_strength * 0.7)
-        shadow[height - 1 - y, :] *= (1.0 - fade * shadow_strength * 0.7)
-
-    # Left and right edge vignetting
-    edge_size = int(width * 0.12)
-    for x in range(edge_size):
-        fade = (edge_size - x) / edge_size
-        shadow[:, x] *= (1.0 - fade * shadow_strength * 0.8)
-        shadow[:, width - 1 - x] *= (1.0 - fade * shadow_strength * 0.8)
-
-    # Corner vignetting (more pronounced)
-    corner_size = min(width, height) // 6
-    corner_shadow_strength = shadow_strength * 1.5
-
-    for y in range(corner_size):
-        for x in range(corner_size):
-            dist = np.sqrt((x / corner_size) ** 2 + (y / corner_size) ** 2)
-            if dist < 1.0:
-                fade = (1.0 - dist) * corner_shadow_strength
-                # Top-left
-                shadow[y, x] *= (1.0 - fade)
-                # Top-right
-                shadow[y, width - 1 - x] *= (1.0 - fade)
-                # Bottom-left
-                shadow[height - 1 - y, x] *= (1.0 - fade)
-                # Bottom-right
-                shadow[height - 1 - y, width - 1 - x] *= (1.0 - fade)
-
-    # Moderate blur for soft vignette
+    min_bands = 1
+    max_bands = 6
+    num_bands = int(min_bands + intensity * (max_bands - min_bands))
+    for _ in range(num_bands):
+        # Random direction: horizontal or vertical
+        direction = random.choice(['horizontal', 'vertical'])
+        # Random width
+        if direction == 'horizontal':
+            band_height = random.randint(int(height * 0.07), int(height * 0.18))
+            band_y = random.randint(int(height * 0.15), int(height * 0.85) - band_height)
+            band_strength = random.uniform(0.08, 0.22) * (0.7 + intensity * 0.6)
+            for y in range(band_y, band_y + band_height):
+                fade = 1.0 - abs(y - (band_y + band_height // 2)) / (band_height // 2)
+                shadow[y, :] *= (1.0 - band_strength * fade)
+        else:
+            band_width = random.randint(int(width * 0.07), int(width * 0.18))
+            band_x = random.randint(int(width * 0.15), int(width * 0.85) - band_width)
+            band_strength = random.uniform(0.08, 0.22) * (0.7 + intensity * 0.6)
+            for x in range(band_x, band_x + band_width):
+                fade = 1.0 - abs(x - (band_x + band_width // 2)) / (band_width // 2)
+                shadow[:, x] *= (1.0 - band_strength * fade)
+    # Moderate blur for realism
     if HAS_OPENCV:
         blur_size = int(15 + intensity * 30)
         if blur_size % 2 == 0:
             blur_size += 1
         shadow = cv2.GaussianBlur(shadow, (blur_size, blur_size), 0)
-
-    # Apply shadow to image
     shadow_rgb = np.stack([shadow] * 3, axis=2)
     result = img_array * shadow_rgb
     result = np.clip(result, 0, 255).astype(np.uint8)
-
     return Image.fromarray(result)
 
 

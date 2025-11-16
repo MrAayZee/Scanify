@@ -26,7 +26,7 @@ from pdf_processor import PDFProcessor
 from preview_window import PreviewWindow
 
 # Version info
-VERSION = "1.0.0"
+VERSION = "2.0.0"
 GITHUB_REPO = "MrAayZee/Scanify"
 # Use raw GitHub URL to version.json (works with private repos if you make the file public)
 VERSION_CHECK_URL = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/version.json"
@@ -48,9 +48,28 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
         self.configure(fg_color=COLOR_BG)
 
         # Set window icon
-        icon_path = os.path.join(os.path.dirname(__file__), 'icon.ico')
-        if os.path.exists(icon_path):
-            self.iconbitmap(icon_path)
+        icon_path = None
+        # Check multiple possible locations for icon.ico
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), 'icon.ico'),  # Script directory
+            os.path.join(os.path.dirname(sys.executable), 'icon.ico'),  # Executable directory
+            'icon.ico',  # Current working directory
+        ]
+
+        # For PyInstaller bundled apps, check the _internal folder
+        if hasattr(sys, 'frozen') and hasattr(sys, '_MEIPASS'):
+            possible_paths.insert(0, os.path.join(sys._MEIPASS, 'icon.ico'))
+
+        for path in possible_paths:
+            if os.path.exists(path):
+                icon_path = path
+                break
+
+        if icon_path:
+            try:
+                self.iconbitmap(icon_path)
+            except Exception:
+                pass  # Silently fail if icon can't be loaded
 
         # Fix Windows dark title bar - force light theme
         if sys.platform == "win32":
@@ -139,21 +158,21 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
         self.browse_btn = ctk.CTkButton(
             row1, text="Browse", command=self._browse_files,
             width=90, height=BUTTON_HEIGHT, fg_color=COLOR_BUTTON,
-            hover_color=COLOR_BUTTON_HOVER, font=ctk.CTkFont(size=12)
+            hover_color=COLOR_BUTTON_HOVER, font=ctk.CTkFont(size=12), corner_radius=0
         )
         self.browse_btn.pack(side="left", padx=(0, 5))
 
         self.remove_btn = ctk.CTkButton(
             row1, text="Remove", command=self._remove_selected,
             width=80, height=BUTTON_HEIGHT, fg_color=COLOR_BUTTON_SECONDARY,
-            hover_color="#5a6268", font=ctk.CTkFont(size=12)
+            hover_color="#5a6268", font=ctk.CTkFont(size=12), corner_radius=0
         )
         self.remove_btn.pack(side="left", padx=(0, 5))
 
         self.clear_btn = ctk.CTkButton(
             row1, text="Clear", command=self._clear_files,
             width=70, height=BUTTON_HEIGHT, fg_color=COLOR_BUTTON_SECONDARY,
-            hover_color="#5a6268", font=ctk.CTkFont(size=12)
+            hover_color="#5a6268", font=ctk.CTkFont(size=12), corner_radius=0
         )
         self.clear_btn.pack(side="left", padx=(0, 20))
 
@@ -169,14 +188,14 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
         self.about_btn = ctk.CTkButton(
             row1, text="ℹ️ About", command=self._show_about,
             width=90, height=BUTTON_HEIGHT, fg_color=COLOR_BUTTON_SECONDARY,
-            hover_color="#5a6268", font=ctk.CTkFont(size=12)
+            hover_color="#5a6268", font=ctk.CTkFont(size=12), corner_radius=0
         )
         self.about_btn.pack(side="right", padx=(5, 0))
 
         self.update_btn = ctk.CTkButton(
             row1, text="🔄 Check Updates", command=self._check_updates_manual,
             width=130, height=BUTTON_HEIGHT, fg_color=COLOR_BUTTON_SECONDARY,
-            hover_color="#5a6268", font=ctk.CTkFont(size=12)
+            hover_color="#5a6268", font=ctk.CTkFont(size=12), corner_radius=0
         )
         self.update_btn.pack(side="right")
 
@@ -212,7 +231,7 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
         self.browse_output_btn = ctk.CTkButton(
             row2, text="Browse", command=self._browse_output,
             width=80, height=BUTTON_HEIGHT, fg_color=COLOR_BUTTON,
-            hover_color=COLOR_BUTTON_HOVER, font=ctk.CTkFont(size=12)
+            hover_color=COLOR_BUTTON_HOVER, font=ctk.CTkFont(size=12), corner_radius=0
         )
         self.browse_output_btn.pack(side="left", padx=(0, 20))
 
@@ -263,7 +282,8 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
             height=BUTTON_HEIGHT + 4,
             fg_color=COLOR_BUTTON,
             hover_color=COLOR_BUTTON_HOVER,
-            font=ctk.CTkFont(size=13, weight="bold")
+            font=ctk.CTkFont(size=13, weight="bold"),
+            corner_radius=0
         )
         self.preview_btn.pack(fill="x", pady=(0, 8))
 
@@ -274,7 +294,8 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
             height=BUTTON_HEIGHT + 8,
             fg_color=COLOR_BUTTON_SUCCESS,
             hover_color="#218838",
-            font=ctk.CTkFont(size=14, weight="bold")
+            font=ctk.CTkFont(size=14, weight="bold"),
+            corner_radius=0
         )
         self.convert_btn.pack(fill="x")
 
@@ -321,6 +342,14 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
             ("Wrinkles", "wrinkles"),
             ("Warp", "warp"),
             ("Texture", "paper_texture"),
+        ]
+        sliders_col1 = [
+            ("DPI", "dpi"),
+            ("Lighting", "lighting"),
+            ("Wrinkles", "wrinkles"),
+            ("Warp", "warp"),
+            ("Texture", "paper_texture"),
+            ("Yellowness", "yellowness"),
         ]
 
         sliders_col2 = [
@@ -444,14 +473,13 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
         self._update_auto_output()
 
     def _remove_selected(self):
-        """Remove selected file from queue."""
-        if not self.processor.pdf_files:
+        """Remove selected file(s) from queue."""
+        selected_files = self.queue_list.get_selected_files()
+        if not selected_files:
             return
-
-        # For now, remove the first file (could be enhanced with selection)
-        if self.processor.pdf_files:
-            self.processor.remove_pdf(self.processor.pdf_files[0])
-            self._update_queue()
+        for file in selected_files:
+            self.processor.remove_pdf(file)
+        self._update_queue()
 
     def _clear_files(self):
         """Clear all files from queue."""
@@ -698,7 +726,7 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
             pass
 
     def _fetch_version_data(self):
-        """Fetch version data from online source or fallback to bundled file."""
+        """Fetch version data from online source or fallback to bundled file. Returns data or None."""
         # Try online source first
         try:
             req = urllib.request.Request(VERSION_CHECK_URL)
@@ -706,60 +734,108 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
 
             with urllib.request.urlopen(req, timeout=5) as response:
                 if response.status == 200:
-                    return json.loads(response.read().decode())
+                    data = json.loads(response.read().decode())
+                    return data
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 # Private repo - try bundled version.json
-                return self._load_bundled_version()
-        except Exception:
-            # Try bundled version.json as fallback
-            return self._load_bundled_version()
+                bundled = self._load_bundled_version()
+                if bundled:
+                    return bundled
+        except urllib.error.URLError as e:
+            # Network error - try bundled version.json as fallback
+            bundled = self._load_bundled_version()
+            if bundled:
+                return bundled
+        except Exception as e:
+            # Any other error - try bundled version.json as fallback
+            bundled = self._load_bundled_version()
+            if bundled:
+                return bundled
 
         return None
 
     def _load_bundled_version(self):
         """Load version info from bundled version.json file."""
         try:
-            version_file = os.path.join(os.path.dirname(__file__), 'version.json')
-            if os.path.exists(version_file):
-                with open(version_file, 'r') as f:
-                    return json.load(f)
-        except Exception:
+            # Try multiple possible locations for version.json
+            possible_paths = [
+                os.path.join(os.path.dirname(__file__), 'version.json'),  # Script directory
+                os.path.join(os.path.dirname(sys.executable), 'version.json'),  # Executable directory
+                'version.json',  # Current working directory
+            ]
+
+            # For PyInstaller bundled apps, check the _internal folder
+            if hasattr(sys, 'frozen') and hasattr(sys, '_MEIPASS'):
+                possible_paths.insert(0, os.path.join(sys._MEIPASS, 'version.json'))
+
+            for version_file in possible_paths:
+                if os.path.exists(version_file):
+                    with open(version_file, 'r') as f:
+                        return json.load(f)
+        except Exception as e:
+            # Debug log
             pass
         return None
 
     def _check_updates_manual(self):
-        """Manually check for updates when user clicks button."""
-        self.activity_log.log("Checking for updates...")
+        """Manually check for updates - opens modal window with real-time status."""
+        # Create and show the update checker window
+        update_window = UpdateCheckerWindow(self)
 
-        try:
-            data = self._fetch_version_data()
+        def check_thread():
+            try:
+                update_window.log_status("🔍 Checking GitHub...")
+                data = self._fetch_version_data()
 
-            if not data:
-                self.activity_log.log("✗ Could not fetch version information")
-                messagebox.showerror("Update Check Failed", "Could not fetch version information. Please try again later.")
-                return
+                if not data:
+                    update_window.log_status("✗ Connection Failed")
+                    update_window.set_result(
+                        "Could Not Fetch Version",
+                        "Failed to connect to GitHub and no bundled version found.\n"
+                        "Please check your internet connection and try again.",
+                        is_success=False
+                    )
+                    return
 
-            latest_version = data.get('version', VERSION)
-            download_url = data.get('download_url', DOWNLOAD_URL)
-
-            if self._compare_versions(latest_version, VERSION) > 0:
-                self.activity_log.log(f"✓ New version available: {latest_version}")
+                latest_version = data.get('version', VERSION)
+                download_url = data.get('download_url', DOWNLOAD_URL)
                 changelog = data.get('changelog', [])
-                changelog_text = "\n".join([f"  • {item}" for item in changelog]) if changelog else ""
 
-                if messagebox.askyesno(
-                    "Update Available",
-                    f"A new version is available!\n\nCurrent: {VERSION}\nLatest: {latest_version}\n\n{changelog_text}\n\nWould you like to download it?",
-                    icon='info'
-                ):
-                    webbrowser.open(download_url)
-            else:
-                self.activity_log.log(f"✓ You're running the latest version ({VERSION})")
-                messagebox.showinfo("Up to Date", f"You're running the latest version ({VERSION})")
-        except Exception as e:
-            self.activity_log.log(f"✗ Failed to check for updates: {str(e)}")
-            messagebox.showerror("Update Check Failed", f"Could not check for updates.\n\n{str(e)}")
+                update_window.log_status("✓ Version info retrieved")
+
+                if self._compare_versions(latest_version, VERSION) > 0:
+                    # New version available
+                    changelog_text = "\n".join([f"  • {item}" for item in changelog]) if changelog else ""
+                    result_text = (
+                        f"Current Version: {VERSION}\n"
+                        f"Latest Version: {latest_version}\n\n"
+                        f"CHANGELOG:\n{changelog_text}\n\n"
+                        f"A new version is available! Click 'Download' to get it."
+                    )
+                    update_window.set_result("New Version Available!", result_text, is_success=True)
+                    update_window.enable_download(download_url)
+                else:
+                    # Already on latest version
+                    result_text = (
+                        f"You are already running the latest version!\n\n"
+                        f"Current Version: {VERSION}\n"
+                        f"Latest Version: {latest_version}\n\n"
+                        f"Your Scanify is up to date."
+                    )
+                    update_window.set_result("Up to Date", result_text, is_success=True)
+
+            except Exception as e:
+                update_window.log_status("✗ Check Failed")
+                update_window.set_result(
+                    "Update Check Error",
+                    f"An error occurred while checking for updates:\n\n{str(e)}",
+                    is_success=False
+                )
+
+        # Run check in background thread
+        thread = threading.Thread(target=check_thread, daemon=True)
+        thread.start()
 
     def _show_update_notification(self, new_version, download_url):
         """Show notification about available update."""
@@ -900,6 +976,128 @@ class ScanifyApp(ctk.CTk, tkdnd.TkinterDnD.DnDWrapper):
             hover_color="#218838"
         )
         close_btn.pack(pady=(0, 20))
+
+
+class UpdateCheckerWindow(ctk.CTkToplevel):
+    """Modal window for showing update check status and results."""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("🔄 Checking for Updates")
+        self.geometry("500x400")
+        self.configure(fg_color=COLOR_BG)
+        self.resizable(False, False)
+
+        # Center window
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (500 // 2)
+        y = (self.winfo_screenheight() // 2) - (400 // 2)
+        self.geometry(f"500x400+{x}+{y}")
+
+        # Make modal
+        self.transient(parent)
+        self.grab_set()
+
+        # Make it topmost initially
+        self.attributes('-topmost', True)
+        self.after(100, lambda: self.attributes('-topmost', False))
+
+        # Main content frame
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # Title
+        ctk.CTkLabel(
+            main_frame,
+            text="Checking for Updates...",
+            font=ctk.CTkFont(size=18, weight="bold")
+        ).pack(pady=(0, 20))
+
+        # Progress indicator (spinner text)
+        self.status_label = ctk.CTkLabel(
+            main_frame,
+            text="🔍 Connecting to server...",
+            font=ctk.CTkFont(size=12),
+            text_color=COLOR_TEXT_SECONDARY,
+            wraplength=450
+        )
+        self.status_label.pack(pady=10)
+
+        # Results area (text box)
+        results_frame = ctk.CTkFrame(main_frame, fg_color=COLOR_CARD, corner_radius=10)
+        results_frame.pack(fill="both", expand=True, pady=20)
+
+        self.results_text = ctk.CTkTextbox(
+            results_frame,
+            font=ctk.CTkFont(size=11),
+            border_width=0,
+            text_color=COLOR_TEXT,
+            fg_color=COLOR_CARD
+        )
+        self.results_text.pack(fill="both", expand=True, padx=15, pady=15)
+        self.results_text.configure(state="disabled")
+
+        # Buttons frame
+        buttons_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        buttons_frame.pack(fill="x", pady=(10, 0))
+
+        self.download_btn = ctk.CTkButton(
+            buttons_frame,
+            text="⬇️ Download",
+            command=self._on_download,
+            fg_color=COLOR_BUTTON_SUCCESS,
+            hover_color="#218838",
+            font=ctk.CTkFont(size=11, weight="bold")
+        )
+        self.download_btn.pack(side="left", padx=(0, 10))
+        self.download_btn.configure(state="disabled")
+
+        self.close_btn = ctk.CTkButton(
+            buttons_frame,
+            text="Close",
+            command=self.destroy,
+            fg_color=COLOR_BUTTON,
+            hover_color=COLOR_BUTTON_HOVER,
+            font=ctk.CTkFont(size=11)
+        )
+        self.close_btn.pack(side="right")
+
+        self.download_url = None
+
+    def log_status(self, message: str):
+        """Add a status message to the results."""
+        self.status_label.configure(text=message)
+        self.update()
+
+    def add_result(self, text: str):
+        """Add text to the results area."""
+        self.results_text.configure(state="normal")
+        self.results_text.insert("end", text + "\n")
+        self.results_text.see("end")  # Scroll to bottom
+        self.results_text.configure(state="disabled")
+        self.update()
+
+    def set_result(self, title: str, body: str, is_success: bool = True):
+        """Set the complete result message."""
+        self.results_text.configure(state="normal")
+        self.results_text.delete("1.0", "end")
+
+        icon = "✓" if is_success else "✗"
+        self.results_text.insert("end", f"{icon} {title}\n\n")
+        self.results_text.insert("end", body)
+
+        self.results_text.configure(state="disabled")
+        self.update()
+
+    def enable_download(self, url: str):
+        """Enable download button and set URL."""
+        self.download_url = url
+        self.download_btn.configure(state="normal")
+
+    def _on_download(self):
+        """Handle download button click."""
+        if self.download_url:
+            webbrowser.open(self.download_url)
 
 
 def main():
