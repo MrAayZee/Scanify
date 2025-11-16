@@ -11,28 +11,26 @@ Built with **Python** and **CustomTkinter**, featuring a clean, modern **light t
 
 ### Core Functionality
 
-- 🎯 **Drag & Drop Support** - Simply drag PDF files into the application
-- 🖼️ **Live Preview** - Preview first page with all effects applied
-- 📦 **Batch Processing** - Convert multiple PDFs at once
-- 📊 **Real-time Progress** - Track conversion progress with detailed activity log
-- 🎨 **Black & White Mode** - True monochrome with adaptive thresholding
-- 🔄 **Auto-Update Check** - Automatic update notifications on startup
-- ℹ️ **About Dialog** - View app info, version, and access GitHub repository
+- 🎯 **Drag & Drop Support** – Simply drag PDF files into the application
+- 🖼️ **Live Preview** – Preview first page with all effects applied
+- 📦 **Batch Processing** – Convert multiple PDFs at once
+- 📊 **Real-time Progress** – Track conversion progress with detailed activity log
+- 🎨 **Black & White Mode** – True monochrome with adaptive thresholding
+- 🔄 **Auto-Update Check** – Automatic update notifications on startup
+- ℹ️ **About Dialog** – View app info, version, and access GitHub repository
 
 ### Realistic Scan Effects
 
-- 💡 **Lighting Gradient** - Subtle lighting variations like real scanners
-- 📐 **Tilt Randomness** - Slight page rotation for authentic look
-- 📄 **Wrinkles** - Paper texture distortion
-- 🌑 **Shadows** - Realistic shadow effects
-- 🔄 **Warp** - Document warping simulation
-- ⚡ **Noise** - Scanner noise simulation
-- 🎨 **Paper Texture** - Realistic paper grain
-- 🖼️ **Page Edge** - Optional page border/rim effect
-- 📐 **Adjustable DPI** - 70-300 DPI output
-- 📊 **JPG Quality** - 40-100% quality control
-
----
+- 💡 **Lighting Gradient** – Subtle lighting variations like real scanners
+- 📐 **Tilt Randomness** – Slight page rotation for authentic look
+- 📄 **Wrinkles** – Paper texture distortion
+- 🌑 **Shadows** – Realistic shadow effects
+- 🔄 **Warp** – Document warping simulation
+- ⚡ **Noise** – Scanner noise simulation
+- 🎨 **Paper Texture** – Realistic paper grain
+- 🖼️ **Page Edge** – Optional page border/rim effect
+- 📐 **Adjustable DPI** – 70–300 DPI output
+- 📊 **JPG Quality** – 40–100% quality control
 
 ## 🚀 Installation
 
@@ -48,61 +46,33 @@ Built with **Python** and **CustomTkinter**, featuring a clean, modern **light t
    ```bash
    git clone https://github.com/MrAayZee/Scanify.git
    cd Scanify
+
    ```
 
-2. Create a virtual environment (recommended):
-
-   ```bash
-   python -m venv venv
-
-   # Windows (PowerShell)
-   .\venv\Scripts\Activate.ps1
-
-   # Windows (CMD)
-   venv\Scripts\activate.bat
-
-   # macOS/Linux
-   source venv/bin/activate
-   ```
-
-3. Install dependencies:
+2. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-4. Build the application:
+3. Run the application:
+
    ```bash
-   python build_complete.py
+   python Scanify.py
    ```
-
----
-
-## 🛠️ Building for Distribution
-
-This script creates:
-
-- **Standalone EXE**: `dist/Scanify.exe`
-- **Installer**: `installer_output/Scanify-Setup-v1.0.0.exe`
-
-For detailed instructions, see `build_complete.py` and `installer.iss`.
-
----
 
 ## 📝 License
 
-MIT License - Free for personal and commercial use.
+MIT License — Free for personal and commercial use.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **CustomTkinter** - Modern, customizable UI framework
-- **PyMuPDF** - Fast and powerful PDF processing
-- **Pillow** - The Python Imaging Library
-- **OpenCV** - Advanced image processing capabilities
-- **NumPy** - Numerical computing foundation
+- **CustomTkinter** – Modern, customizable UI framework
+- **PyMuPDF** – Fast and powerful PDF processing
+- **Pillow** – The Python Imaging Library
+- **OpenCV** – Advanced image processing capabilities
+- **NumPy** – Numerical computing foundation
 
----
-
-**Scanify v1.0.0** - Developed by **MrAayZee**
+**Scanify v2.0.0** – Developed by **Dr. AayZee**
